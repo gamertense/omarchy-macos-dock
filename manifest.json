@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "jack.dock",
+  "name": "Dock",
+  "version": "1.0.0",
+  "author": "Jack Vatcharat",
+  "description": "macOS-style dock: magnification, running dots, Downloads and Trash",
+  "kinds": [
+    "service"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml"
+  }
+}
