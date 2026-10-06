@@ -39,6 +39,8 @@ Item {
         JsonAdapter {
             id: pins
             property list<string> pinned: []
+            // Grow icons under the pointer. Off by default.
+            property bool magnification: false
             onPinnedChanged: Qt.callLater(root.rebuild)
         }
     }
@@ -226,7 +228,7 @@ Item {
         // magnification shrinks back where it was.
         readonly property real rowLeft: (width - root.restWidth) / 2
         property var mouseRow: null
-        property real amount: hover.hovered ? 1 : 0
+        property real amount: hover.hovered && pins.magnification ? 1 : 0
         Behavior on amount { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
         readonly property var geo: Logic.layout(root.widths, root.slots.map(s => s.kind !== "divider"),
@@ -256,7 +258,7 @@ Item {
                 id: hitArea
                 x: bar.x
                 width: bar.width
-                y: hover.hovered ? panel.barY - (root.maxIconSize - root.iconSize) : panel.barY
+                y: hover.hovered && pins.magnification ? panel.barY - (root.maxIconSize - root.iconSize) : panel.barY
                 height: panel.height - y
             }
 

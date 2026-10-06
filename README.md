@@ -3,10 +3,10 @@
 A macOS-style dock for [Omarchy](https://omarchy.org/), as an Omarchy shell
 plugin.
 
-![The dock, magnified over Telegram](preview.png)
+![The dock with magnification on, over Telegram](preview.png)
 
 One frosted bar of pinned apps, then running apps, a divider, Downloads and
-Trash. Icons magnify under the pointer, running apps get a dot, and hovering
+Trash. Running apps get a dot, and hovering
 shows the app's name.
 
 - Click a closed app to launch it (it bounces), a running one to bring back
@@ -16,8 +16,9 @@ shows the app's name.
   dock where you drop it); drag a kept app up off the dock to remove it.
 - Right-click for New Window, Keep in / Remove from Dock, and Quit; on Trash,
   Empty Trash.
-- Pins live in `~/.config/omarchy/jack-dock.json` as desktop-file ids:
-  `{ "pinned": ["brave-browser", "foot"] }`.
+- Settings live in `~/.config/omarchy/jack-dock.json`: pins as desktop-file
+  ids, and magnification (off by default):
+  `{ "pinned": ["brave-browser", "foot"], "magnification": true }`.
 - The dock reserves its height, so tiled windows stop above it.
 
 ## Install
