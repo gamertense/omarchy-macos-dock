@@ -460,92 +460,94 @@ Item {
             }
         }
 
-        // Right-click menu.
-        PopupWindow {
-            id: menu
-            visible: !!root.menuSlot
-            color: "transparent"
-            anchor.window: panel
-            anchor.rect.x: root.menuX
-            anchor.rect.y: root.menuY
-            anchor.edges: Edges.Top
-            anchor.gravity: Edges.Top
-            implicitWidth: menuBox.width
-            implicitHeight: menuBox.height
+    }
 
-            readonly property var items: {
-                const s = root.menuSlot;
-                if (!s) return [];
-                if (s.kind === "folder") return [{ text: "Open", run: () => root.openPath(Quickshell.env("HOME") + "/Downloads") }];
-                if (s.kind === "trash") return [
-                    { text: "Open", run: () => root.openPath("trash:///") },
-                    { text: "Empty Trash", run: () => Quickshell.execDetached(["gio", "trash", "--empty"]) }];
-                const a = s.app, out = [];
-                if (a.entry) {
-                    out.push({ text: a.windows.length ? "New Window" : "Open", run: () => root.launch(a) });
-                    out.push({ text: a.pinned ? "Remove from Dock" : "Keep in Dock", run: () => root.togglePin(a.key) });
+    // Right-click menu: a transparent fullscreen overlay, so a click anywhere
+    // outside the menu closes it. (HyprlandFocusGrab never fired here.)
+    PanelWindow {
+        id: menu
+        visible: !!root.menuSlot
+        color: "transparent"
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "jack-dock-menu"
+        exclusionMode: ExclusionMode.Ignore
+        anchors { top: true; bottom: true; left: true; right: true }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            onPressed: root.menuSlot = null
+        }
+
+        readonly property var items: {
+            const s = root.menuSlot;
+            if (!s) return [];
+            if (s.kind === "folder") return [{ text: "Open", run: () => root.openPath(Quickshell.env("HOME") + "/Downloads") }];
+            if (s.kind === "trash") return [
+                { text: "Open", run: () => root.openPath("trash:///") },
+                { text: "Empty Trash", run: () => Quickshell.execDetached(["gio", "trash", "--empty"]) }];
+            const a = s.app, out = [];
+            if (a.entry) {
+                out.push({ text: a.windows.length ? "New Window" : "Open", run: () => root.launch(a) });
+                out.push({ text: a.pinned ? "Remove from Dock" : "Keep in Dock", run: () => root.togglePin(a.key) });
+            }
+            if (a.windows.length) out.push({ text: "Quit", run: () => root.quit(a) });
+            return out;
+        }
+
+        Rectangle {
+            id: menuBox
+            // Menu coords are in the dock window; it sits at the screen bottom.
+            x: root.menuX - width / 2
+            y: menu.height - panel.height + root.menuY - height
+            width: Math.max(160, menuCol.implicitWidth + 12)
+            height: menuCol.implicitHeight + 12
+            radius: 10
+            color: Qt.alpha(Color.background, 0.94)
+            border.color: Qt.alpha(Color.foreground, 0.16)
+            border.width: 1
+
+            Column {
+                id: menuCol
+                x: 6
+                y: 6
+                width: parent.width - 12
+
+                Text {
+                    text: root.menuSlot ? root.menuSlot.name : ""
+                    color: Qt.alpha(Color.foreground, 0.55)
+                    font.pixelSize: 12
+                    leftPadding: 10
+                    topPadding: 3
+                    bottomPadding: 5
                 }
-                if (a.windows.length) out.push({ text: "Quit", run: () => root.quit(a) });
-                return out;
-            }
 
-            HyprlandFocusGrab {
-                active: menu.visible
-                windows: [menu]
-                onCleared: root.menuSlot = null
-            }
+                Repeater {
+                    model: menu.items
 
-            Rectangle {
-                id: menuBox
-                width: Math.max(160, menuCol.implicitWidth + 12)
-                height: menuCol.implicitHeight + 12
-                radius: 10
-                color: Qt.alpha(Color.background, 0.94)
-                border.color: Qt.alpha(Color.foreground, 0.16)
-                border.width: 1
+                    Rectangle {
+                        required property var modelData
+                        width: menuCol.width
+                        height: 28
+                        radius: 6
+                        color: rowMouse.containsMouse ? Qt.alpha(Color.accent, 0.85) : "transparent"
 
-                Column {
-                    id: menuCol
-                    x: 6
-                    y: 6
-                    width: parent.width - 12
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            x: 10
+                            text: parent.modelData.text
+                            color: rowMouse.containsMouse ? Color.background : Color.foreground
+                            font.pixelSize: 13
+                        }
 
-                    Text {
-                        text: root.menuSlot ? root.menuSlot.name : ""
-                        color: Qt.alpha(Color.foreground, 0.55)
-                        font.pixelSize: 12
-                        leftPadding: 10
-                        topPadding: 3
-                        bottomPadding: 5
-                    }
-
-                    Repeater {
-                        model: menu.items
-
-                        Rectangle {
-                            required property var modelData
-                            width: menuCol.width
-                            height: 28
-                            radius: 6
-                            color: rowMouse.containsMouse ? Qt.alpha(Color.accent, 0.85) : "transparent"
-
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                x: 10
-                                text: parent.modelData.text
-                                color: rowMouse.containsMouse ? Color.background : Color.foreground
-                                font.pixelSize: 13
-                            }
-
-                            MouseArea {
-                                id: rowMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: {
-                                    const run = parent.modelData.run;
-                                    root.menuSlot = null;
-                                    run();
-                                }
+                        MouseArea {
+                            id: rowMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: {
+                                const run = parent.modelData.run;
+                                root.menuSlot = null;
+                                run();
                             }
                         }
                     }
