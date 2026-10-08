@@ -138,8 +138,10 @@ Item {
         return a.startsWith("0x") ? a : "0x" + a;
     }
 
+    // By key, not app.entry.id: a held DesktopEntry can go stale (id reads
+    // undefined), which launched "undefined.desktop". key is the entry's id.
     function launch(app) {
-        Quickshell.execDetached(["uwsm-app", "--", "gtk-launch", app.entry.id + ".desktop"]);
+        Quickshell.execDetached(["uwsm-app", "--", "gtk-launch", app.key + ".desktop"]);
     }
 
     // Click: launch if closed; bring back the app's last window (restoring it
