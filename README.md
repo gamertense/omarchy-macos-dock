@@ -14,7 +14,8 @@ shows the app's name.
   Click the app in front again to cycle its windows.
 - Drag an icon along the dock to reorder it (a running app gets kept in the
   dock where you drop it); drag a kept app up off the dock to remove it.
-- Right-click for New Window, Keep in / Remove from Dock, and Quit; on Trash,
+- Right-click to switch between the app's windows (the front one ticked), or for
+  New Window, Keep in / Remove from Dock, and Quit; on Trash,
   Empty Trash.
 - Settings live in `~/.config/omarchy/jack-dock.json`: pins as desktop-file
   ids, and magnification (off by default):

@@ -155,6 +155,10 @@ Item {
         const i = wins.findIndex(w => active && w.top.address === active.address);
         const target = i >= 0 ? wins[(i + 1) % wins.length].top : wins[0].top;
         if (i >= 0 && wins.length === 1) return;
+        root.focusWindow(target);
+    }
+
+    function focusWindow(target) {
         const sel = '"address:' + root.addr(target) + '"';
         let cmd = "";
         const ws = target.workspace;
@@ -487,6 +491,14 @@ Item {
                 { text: "Open", run: () => root.openPath("trash:///") },
                 { text: "Empty Trash", run: () => Quickshell.execDetached(["gio", "trash", "--empty"]) }];
             const a = s.app, out = [];
+            // Its windows first, the front one ticked, like macOS.
+            const active = Hyprland.activeToplevel;
+            for (const w of a.windows) {
+                const t = w.top;
+                out.push({ text: (active && t.address === active.address ? "✓  " : "    ") + (t.title || a.name),
+                    run: () => root.focusWindow(t) });
+            }
+            if (a.windows.length) out.push({ separator: true });
             if (a.entry) {
                 out.push({ text: a.windows.length ? "New Window" : "Open", run: () => root.launch(a) });
                 out.push({ text: a.pinned ? "Remove from Dock" : "Keep in Dock", run: () => root.togglePin(a.key) });
@@ -500,7 +512,7 @@ Item {
             // Menu coords are in the dock window; it sits at the screen bottom.
             x: root.menuX - width / 2
             y: menu.height - panel.height + root.menuY - height
-            width: Math.max(160, menuCol.implicitWidth + 12)
+            width: Math.max(menu.items.some(i => i.separator) ? 320 : 160, menuCol.implicitWidth + 12)
             height: menuCol.implicitHeight + 12
             radius: 10
             color: Qt.alpha(Color.background, 0.94)
@@ -528,14 +540,24 @@ Item {
                     Rectangle {
                         required property var modelData
                         width: menuCol.width
-                        height: 28
+                        height: modelData.separator ? 9 : 28
                         radius: 6
                         color: rowMouse.containsMouse ? Qt.alpha(Color.accent, 0.85) : "transparent"
+
+                        Rectangle {
+                            visible: !!parent.modelData.separator
+                            anchors.centerIn: parent
+                            width: parent.width - 16
+                            height: 1
+                            color: Qt.alpha(Color.foreground, 0.16)
+                        }
 
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             x: 10
-                            text: parent.modelData.text
+                            width: parent.width - 20
+                            elide: Text.ElideRight
+                            text: parent.modelData.text || ""
                             color: rowMouse.containsMouse ? Color.background : Color.foreground
                             font.pixelSize: 13
                         }
@@ -544,6 +566,7 @@ Item {
                             id: rowMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            enabled: !parent.modelData.separator
                             onClicked: {
                                 const run = parent.modelData.run;
                                 root.menuSlot = null;
