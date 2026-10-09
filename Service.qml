@@ -220,6 +220,32 @@ Item {
     property real menuX: 0
     property real menuY: 0
 
+    // VS Code's recent folders for its menu, newest first. VS Code touches a
+    // workspaceStorage/<hash>/workspace.json each time a folder is opened.
+    readonly property string vscodeKey: "com.microsoft.VSCode"
+    property var recent: []
+    Process {
+        id: recentProc
+        command: ["python3", "-c", `
+import glob, json, os, urllib.parse
+seen = []
+for f in sorted(glob.glob(os.path.expanduser("~/.config/Code/User/workspaceStorage/*/workspace.json")),
+                key=os.path.getmtime, reverse=True):
+    d = json.load(open(f))
+    u = d.get("folder") or d.get("workspace") or ""
+    p = urllib.parse.unquote(u[7:]) if u.startswith("file://") else ""
+    if p and p not in seen and os.path.exists(p): seen.append(p)
+print("\\n".join(seen[:10]))`]
+        stdout: StdioCollector {
+            waitForEnd: true
+            onStreamFinished: root.recent = text.split("\n").filter(Boolean)
+        }
+    }
+    onMenuSlotChanged: if (menuSlot && menuSlot.kind === "app" && menuSlot.app.key === vscodeKey) {
+        root.recent = [];
+        recentProc.running = true;
+    }
+
     PanelWindow {
         id: panel
 
@@ -501,6 +527,13 @@ Item {
                     run: () => root.focusWindow(t) });
             }
             if (a.windows.length) out.push({ separator: true });
+            if (a.key === root.vscodeKey && root.recent.length) {
+                const home = Quickshell.env("HOME");
+                for (const p of root.recent)
+                    out.push({ text: p.startsWith(home) ? "~" + p.slice(home.length) : p,
+                        run: () => Quickshell.execDetached(["uwsm-app", "--", "code", p]) });
+                out.push({ separator: true });
+            }
             if (a.entry) {
                 out.push({ text: a.windows.length ? "New Window" : "Open", run: () => root.launch(a) });
                 out.push({ text: a.pinned ? "Remove from Dock" : "Keep in Dock", run: () => root.togglePin(a.key) });
