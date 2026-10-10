@@ -34,4 +34,10 @@ assert.deepStrictEqual(pinsAfterDrop(["a", "b", "c"], ["a", "b"], 2, 0, true), [
 assert.deepStrictEqual(pinsAfterDrop(["a", "b", "c"], ["a", "b"], 0, 1, true), ["b", "a"]);
 // An app with no desktop file can't be pinned.
 assert.deepStrictEqual(pinsAfterDrop(["a", "c"], ["a"], 1, 0, false), ["a"]);
+// Badges: partial updates merge; hidden or zero counts show nothing.
+let bs = mergeBadge({}, ["application://org.telegram.desktop.desktop", { count: { type: "x", data: 3 }, "count-visible": { type: "b", data: true } }]);
+assert.strictEqual(badgeText(bs["org.telegram.desktop"]), "3");
+bs = mergeBadge(bs, ["application://org.telegram.desktop.desktop", { count: { type: "x", data: 0 } }]);
+assert.strictEqual(badgeText(bs["org.telegram.desktop"]), "");
+assert.strictEqual(badgeText(undefined), "");
 console.log("ok");

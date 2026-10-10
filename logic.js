@@ -72,3 +72,19 @@ function pinsAfterDrop(keys, pinned, from, to, canPin) {
     if (canPin) keep.add(moved);
     return order.filter(k => keep.has(k));
 }
+
+// Unity LauncherEntry badges. data is an Update signal's payload,
+// ["application://<id>.desktop", { prop: { type, data } }]; updates are
+// partial, so props merge into what the app sent before. Keyed by desktop id.
+function mergeBadge(badges, data) {
+    const key = data[0].replace(/^application:\/\//, "").replace(/\.desktop$/, "");
+    const b = Object.assign({}, badges[key]);
+    for (const k in data[1]) b[k] = data[1][k].data;
+    const out = Object.assign({}, badges);
+    out[key] = b;
+    return out;
+}
+
+function badgeText(b) {
+    return b && b["count-visible"] && b.count > 0 ? String(b.count) : "";
+}

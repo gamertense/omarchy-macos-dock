@@ -132,6 +132,21 @@ Item {
     }
     Component.onCompleted: rebuild()
 
+    // Unread counts apps broadcast over D-Bus (Unity LauncherEntry), by desktop id.
+    // ponytail: a badge outlives an app that quits without zeroing it; track
+    // the sender's bus name if that turns out to matter.
+    property var badges: ({})
+    Process {
+        running: true
+        command: ["busctl", "--user", "monitor", "--json=short", "--match",
+            "type='signal',interface='com.canonical.Unity.LauncherEntry',member='Update'"]
+        stdout: SplitParser {
+            onRead: line => {
+                try { root.badges = Logic.mergeBadge(root.badges, JSON.parse(line).payload.data) } catch (e) {}
+            }
+        }
+    }
+
     // ── Actions ─────────────────────────────────────────────────────────
     function addr(t) {
         const a = String(t.address);
@@ -369,6 +384,28 @@ print("\\n".join(seen[:10]))`]
                         fillMode: Image.PreserveAspectFit
                         smooth: true
                         mipmap: true
+
+                        // Unread badge, top-right like macOS.
+                        Rectangle {
+                            readonly property string count: slot.modelData.kind === "app"
+                                ? Logic.badgeText(root.badges[slot.modelData.app.key]) : ""
+                            visible: count !== ""
+                            height: 20 * slot.mag
+                            width: Math.max(height, badgeText.implicitWidth + 10 * slot.mag)
+                            radius: height / 2
+                            x: parent.width - width * 0.75
+                            y: -height * 0.25
+                            color: "#ff3b30"
+
+                            Text {
+                                id: badgeText
+                                anchors.centerIn: parent
+                                text: parent.count
+                                color: "white"
+                                font.pixelSize: 12 * slot.mag
+                                font.bold: true
+                            }
+                        }
                     }
 
                     // Running dot.
