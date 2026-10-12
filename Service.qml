@@ -191,7 +191,10 @@ Item {
     }
 
     function quit(app) {
-        for (const w of app.windows) if (w.top.wayland) w.top.wayland.close();
+        // Via hyprctl, not top.wayland.close(): wayland is null for XWayland windows.
+        for (const w of app.windows)
+            Quickshell.execDetached(["hyprctl", "dispatch",
+                'hl.dsp.window.close({ window = "address:' + root.addr(w.top) + '" })']);
     }
 
     function openPath(uri) {
@@ -575,7 +578,10 @@ print("\\n".join(seen[:10]))`]
                 out.push({ text: a.windows.length ? "New Window" : "Open", run: () => root.launch(a) });
                 out.push({ text: a.pinned ? "Remove from Dock" : "Keep in Dock", run: () => root.togglePin(a.key) });
             }
-            if (a.windows.length) out.push({ text: "Quit", run: () => root.quit(a) });
+            if (a.windows.length) {
+                if (a.entry) out.push({ separator: true });
+                out.push({ text: "Quit", run: () => root.quit(a) });
+            }
             return out;
         }
 
